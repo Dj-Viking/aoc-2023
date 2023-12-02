@@ -3,14 +3,12 @@ import fs from "fs";
 const input = fs.readFileSync(__dirname + `\\${process.env.INPUTFILE}.txt`, { encoding: "utf8" });
 
 (function main1() {
-    let gamespossible = 0;
     const ids: number[] = [];
 
     for (const line of input.split("\r\n")) {
         // for (const line of sample.split("\r\n")) {
         // console.log(line);
 
-        let gameobj: Record<string, number> = {};
         const gameId = Number(
             line
                 .split(":")[0]
@@ -18,9 +16,6 @@ const input = fs.readFileSync(__dirname + `\\${process.env.INPUTFILE}.txt`, { en
                 .trim()
         );
         // console.log("ROUND===========================gameid", gameId, "game obj", gameobj);
-        gameobj["red"] = 0;
-        gameobj["green"] = 0;
-        gameobj["blue"] = 0;
         const newline = line.replace(/Game \d{1,3}:\s/, "");
         const subsets = newline.split(";").map((str) => str.trim());
         // console.log("subsets", subsets);
