@@ -2,7 +2,7 @@
 set -e;
 
 cat << EOF > index.ts
-import fs from "fs"
+import fs from "fs";
 
 const input = fs.readFileSync(__dirname + \`\\\\\${process.env.INPUTFILE}.txt\`, { encoding: "utf-8" });
 const lines = input.split(/\r\n|\n/);
