@@ -1,7 +1,6 @@
 import fs from "fs";
 
-const input = fs.readFileSync(__dirname + "\\input.txt", { encoding: "utf8" });
-const sample = fs.readFileSync(__dirname + "\\sample.txt", { encoding: "utf8" });
+const input = fs.readFileSync(__dirname + `\\${process.env.INPUTFILE}.txt`, { encoding: "utf8" });
 
 (function main1() {
     let gamespossible = 0;
