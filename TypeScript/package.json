@@ -4,11 +4,7 @@
     "description": "",
     "main": "index.js",
     "scripts": {
-        "dev": "tsc -b . --watch",
-        "testthing": "echo \"The value of --foo is npm_config_foo",
-        "solve": "sh solve.sh",
-        "solve-6": "sh solve.sh 6",
-        "solve-windows": "powershell -File solve.ps1"
+        "dev": "tsc -b . --watch"
     },
     "author": "",
     "license": "ISC",

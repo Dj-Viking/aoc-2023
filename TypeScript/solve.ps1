@@ -1,9 +1,12 @@
 param(
-    $DayNumber = 0,
-    $inputfile = "sample"
+    [Parameter(Mandatory, Position = 0)]
+    [int16]$DayNumber = 0,
+
+    [Parameter(Mandatory, Position = 1)]
+    [string]$InputFile = "sample"
 )
 
-$env:INPUTFILE = $inputfile;
+$env:INPUTFILE = $InputFile;
 
 if (-not (Test-Path ".\dist")) {
     node ./node_modules/typescript/bin/tsc -b .
