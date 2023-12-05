@@ -27,8 +27,14 @@ https.get(
         },
     },
     (res) => {
+        let content = "";
         res.on("data", (chunk) => {
-            fs.writeFileSync(savePath, chunk.toString(), { encoding: "utf8" });
+            content += chunk.toString();
+        }).on("end", () => {
+            console.log(content);
+            setTimeout(() => {
+                fs.writeFileSync(savePath, content.trim(), { encoding: "utf8" });
+            }, 100);
         });
     }
 );
