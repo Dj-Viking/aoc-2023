@@ -32,9 +32,7 @@ https.get(
             content += chunk.toString();
         }).on("end", () => {
             console.log(content);
-            setTimeout(() => {
-                fs.writeFileSync(savePath, content.trim(), { encoding: "utf8" });
-            }, 100);
+            fs.writeFileSync(savePath, content.trim(), { encoding: "utf8" });
         });
     }
 );
