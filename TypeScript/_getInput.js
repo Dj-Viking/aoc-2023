@@ -5,7 +5,7 @@ const myargs = process.argv.slice(2);
 
 if (myargs.length === 0) {
     throw new Error(
-        "\t\tPLEASE PROVIDE A DAY NUMBER TO THIS SCRIPT THANKS \n\t\t\t === usage: node getInput.js 1 ===\n\n\n\x1b[00m"
+        "\t\tPLEASE PROVIDE A DAY NUMBER TO THIS SCRIPT THANKS \n\t\t\t === usage: node _getInput.js 1 ===\n\n\n\x1b[00m"
     );
 }
 
