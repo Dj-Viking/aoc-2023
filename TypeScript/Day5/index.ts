@@ -132,6 +132,46 @@ function getDestByMap(source: number, map: GardenMap): number {
 function getLocationBySeed(seed: number, maps: GardenMap[]) {
 	return maps.reduce((dest, map) => getDestByMap(dest, map), seed);
 }
+type SeedRange = {
+	start: number;
+	end: number;
+};
+function getSeedRanges(seeds: number[]): SeedRange[] {
+	const ranges: SeedRange[] = [];
+	for (let i = 0; i < seeds.length; i += 2) {
+		ranges.push({
+			start: seeds[i],
+			end: seeds[i] + seeds[i + 1],
+		});
+	}
+
+	return ranges;
+}
+
+function isSeedPresent(seed: number, seedRanges: SeedRange[]): boolean {
+	return seedRanges.some(({ start, end }) => {
+		return start <= seed && seed <= end;
+	});
+}
+
+function getSourceByMap(dest: number, map: GardenMap) {
+	const mapEntry = map.find(
+		({ destRangeStart, rangeLength }) =>
+			dest >= destRangeStart && dest <= destRangeStart + rangeLength
+	);
+
+	if (!mapEntry) {
+		return dest;
+	}
+
+	const offset = dest - mapEntry.destRangeStart;
+	const source = mapEntry.sourceRangeStart + offset;
+	return source;
+}
+
+function getSeedByLocation(location: number, maps: GardenMap[]): number {
+	return [...maps].reverse().reduce((source, map) => getSourceByMap(source, map), location);
+}
 
 (function main1() {
 	const { seeds, maps } = parseInput(input);
@@ -139,5 +179,16 @@ function getLocationBySeed(seed: number, maps: GardenMap[]) {
 	console.log("part1", Math.min(...locations));
 })();
 (function main2() {
-	// console.log("part2", null);
+	const { seeds, maps } = parseInput(input);
+	const seedRanges = getSeedRanges(seeds);
+	let location = null;
+	location: for (let loc = 0; ; loc++) {
+		const seed = getSeedByLocation(loc, maps);
+
+		if (isSeedPresent(seed, seedRanges)) {
+			location = loc;
+			break location;
+		}
+	}
+	console.log("part2", location);
 })();
