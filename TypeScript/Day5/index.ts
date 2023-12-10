@@ -65,104 +65,78 @@ humidity-to-location map:
 56 93 4
  */
 
-type RecordKey = number | string | symbol;
+type AlamanacMapItem = {
+	destRangeStart: number;
+	sourceRangeStart: number;
+	rangeLength: number;
+};
 
-class AlamanacMap<K extends RecordKey = RecordKey, V extends number = number> {
-	public storage = new Object() as Record<K, V>;
-	constructor() {}
+type GardenMap = AlamanacMapItem[];
+
+type ParsedInput = {
+	seeds: number[];
+	maps: GardenMap[];
+};
+
+function getNumbers(line: string): number[] {
+	return line
+		.trim()
+		.split(" ")
+		.map((s) => Number(s));
 }
 
-let seedToSoilMap = new AlamanacMap();
-let soilToFertilizerMap = new AlamanacMap();
-let fertilizerToWaterMap = new AlamanacMap();
-let waterToLightMap = new AlamanacMap();
-let lightToTemperatureMap = new AlamanacMap();
-let humidityToLocationMap = new AlamanacMap();
+function parseInput(input: string): ParsedInput {
+	const inputlines = input.split(/\r\n|\n/);
+	const [seedsLine, ...rest] = inputlines;
 
-// sample
-let seedsToPlant: number[] = [];
+	const seeds: number[] = getNumbers(seedsLine.split(":")[1]);
+	const maps: GardenMap[] = [];
 
-function getSeedsToPlant(_line: string): number[] {
-	let line = _line.replace(/seeds: /g, "");
-
-	return line.split(" ").map((s) => Number(s));
-}
-
-function getSrcDestRangeFromLine(_line: string[]): [number, number, number] {
-	const numsline = _line.map((s) => Number(s));
-
-	return [numsline[1], numsline[0], numsline[2]];
-}
-
-function makeSeedsToSoilMap<T extends AlamanacMap<number, number>>(
-	_line: string
-): T {
-	let map = new AlamanacMap<number, number>();
-
-	const numsections = _line
-		.replace(/seed-to-soil map:/, "")
-		.split(/^\d|\n/)
-		.filter((s) => !!s); // ["num num num", "num num num"]
-
-	for (const sec of numsections) {
-		const [seed, fert, rangeLength] = getSrcDestRangeFromLine(
-			sec.split(" ")
-		);
-		console.log("going to map some stuff", seed, fert, rangeLength);
-
-		for (let i = 0; i <= rangeLength; i++) {
-			switch (true) {
-				case seedsToPlant.includes(seed + i) &&
-					!map.storage.hasOwnProperty(seed + i):
-					{
-						map.storage[seed + i] = fert + i;
-						console.log(
-							"\x1b[32m",
-							"mapped from almanac and in seeds list",
-							seed + i,
-							" => ",
-							fert + i
-						);
-					}
-					break;
-				case seedsToPlant.includes(i) && !map.storage.hasOwnProperty(i):
-					{
-						map.storage[i] = i;
-						console.log(
-							"\x1b[36m",
-							"mapped by default and in seeds list",
-							i,
-							" => ",
-							map.storage[i]
-						);
-					}
-					break;
-
-				default:
-					continue;
-			}
+	for (const line of rest) {
+		if (line.trim() === "") {
+			continue;
 		}
+
+		if (line.includes("map")) {
+			maps.push([]);
+			continue;
+		}
+
+		const currentMap = maps[maps.length - 1];
+		const [destRangeStart, sourceRangeStart, rangeLength] = getNumbers(line);
+
+		currentMap.push({
+			destRangeStart,
+			sourceRangeStart,
+			rangeLength,
+		});
 	}
 
-	console.log("map now", map);
+	return { seeds, maps };
+}
 
-	return map as T;
+function getDestByMap(source: number, map: GardenMap): number {
+	const mapEntry = map.find(({ sourceRangeStart, rangeLength }) => {
+		return source >= sourceRangeStart && source <= sourceRangeStart + rangeLength;
+	});
+
+	if (!mapEntry) {
+		return source;
+	}
+
+	const offset = source - mapEntry.sourceRangeStart;
+	const dest = mapEntry.destRangeStart + offset;
+	return dest;
+}
+
+function getLocationBySeed(seed: number, maps: GardenMap[]) {
+	return maps.reduce((dest, map) => getDestByMap(dest, map), seed);
 }
 
 (function main1() {
-	seedsToPlant = getSeedsToPlant(lines[0]);
-
-	const sections = lines.join("\n").split(/\r\n\r\n|\n\n/);
-
-	seedToSoilMap = makeSeedsToSoilMap(
-		sections.find((sec) => /seed-to-soil/g.test(sec))!
-	);
-
-	// soilToFertilizerMap = makeSoilToFertilizerMap(
-	// 	sections.find((sec) => /soil-to-fertilizer/g.test(sec))!
-	// );
-
-	// console.log("part1", null);
+	const { seeds, maps } = parseInput(input);
+	const locations = seeds.map((seed) => getLocationBySeed(seed, maps));
+	console.log("part1", Math.min(...locations));
 })();
 (function main2() {
 	// console.log("part2", null);
