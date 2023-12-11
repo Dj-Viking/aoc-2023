@@ -1,5 +1,4 @@
 import fs from "fs";
-
 type Durations = Record<number, number>;
 type Distances = Record<number, number>;
 
