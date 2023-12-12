@@ -402,56 +402,61 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 		}
 	});
 
-	console.log("==========================");
-	console.log("sorted by type strength");
+	// console.log("==========================");
+	// console.log("sorted by type strength");
 
 	for (let i = 0; i < sortedHandsByTypeStrength.length; i++) {
 		const hand = sortedHandsByTypeStrength[i];
 		const count = handTypeMap.unsafeGet(hand.handType);
-		if (count === 1 && hand.handType === "FiveOfAKind") {
-			hands[hand.id].rank = sortedHandsByTypeStrength.length;
-		} else if (
-			(count === 1 && hand.handType === "HighCard") ||
-			(count === 1 && hand.handType === "OnePair")
-		) {
-			hands[hand.id].rank = 1;
-		} else if (count > 1) {
-			const handsWithType = Object.values(hands).filter((h) => h.handType === hand.handType);
+		const handsWithType = Object.values(hands).filter((h) => h.handType === hand.handType);
+		if (count > 1) {
 			// somehow figure out how each hand with the same type will rank against eachother
 			const sortedHandsWithTypeByStrength = handsWithType.sort((aHand, bHand) => {
 				const aChars = aHand.id.split("") as Array<keyof FacetoStrengthRecord>;
 				const bChars = bHand.id.split("") as Array<keyof FacetoStrengthRecord>;
 				let result = 0;
-				outer: for (const a_char of aChars) {
-					inner: for (const b_char of bChars) {
-						// somehow this will put the highest ranking as earlier index in the array
-						if (FaceToStrength[a_char] < FaceToStrength[b_char]) {
-							result = 1;
-							break outer;
-						} else if (FaceToStrength[a_char] === FaceToStrength[b_char]) {
-							result = 0;
-							break inner;
-						} else {
-							result = -1;
-							break outer;
-						}
+				let i = 0;
+				while (i < aChars.length) {
+					const achar = aChars[i];
+					const bchar = bChars[i];
+
+					if (FaceToStrength[achar] < FaceToStrength[bchar]) {
+						result = -1;
+						break;
+					} else if (FaceToStrength[achar] === FaceToStrength[bchar]) {
+						i++;
+						continue;
+					} else if (FaceToStrength[achar] > FaceToStrength[bchar]) {
+						result = 1;
+						break;
 					}
+
+					i++;
 				}
 				return result;
 			});
-			console.log("\x1b[32m", "sorted hands by type strength", "\x1b[00m");
-			console.log(sortedHandsWithTypeByStrength);
+			// console.log("\x1b[32m", "sorted hands by type strength", "\x1b[00m");
+			// console.log(sortedHandsWithTypeByStrength);
 			// assign ranks to the sorted hands with the same type
 			// skip ahead by however many cards we ranked here that all have the same type
+			sortedHandsWithTypeByStrength.forEach((hand, index) => {
+				hands[hand.id].rank = i + index + 1;
+			});
 			i += handsWithType.length - 1;
+		} else {
+			hands[handsWithType[0].id].rank = i + 1;
 		}
 	}
-	console.log("==========================");
-
-	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+	// console.log("==========================");
+	let sum = 0;
+	for (const hand of Object.values(hands)) {
+		sum += hand.bid * hand.rank;
+	}
+	// console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 	// console.log(hands);
-
-	console.log("part1", null);
+	// 251072643 is too high ....
+	// 250951660 ?? YES1!!!!!!!
+	console.log("part1", sum);
 })();
 (function main2() {
 	// console.log("part2", null);
