@@ -355,7 +355,6 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 
 (function main1() {
 	const hands: Record<string, Hand> = {};
-	let onlyHandOfItsOwnType = null as any as Hand;
 	const checkHandsAreUnique = {} as Record<string, number>;
 
 	for (const line of lines) {
@@ -369,7 +368,7 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 		const hand = new Hand(cards.split(""), Number(bid));
 		hand.setHandType();
 		hands[hand.id] = hand;
-		console.log(cards.split(""), "\n", hand);
+		// console.log(cards.split(""), "\n", hand);
 		// testHand(hand, bid);
 	}
 
@@ -406,25 +405,26 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 	console.log("==========================");
 	console.log("sorted by type strength");
 
-	let totalHands = 0;
-	while (sortedHandsByTypeStrength.length) {
-		const hand = sortedHandsByTypeStrength.shift()!;
+	for (let i = 0; i < sortedHandsByTypeStrength.length; i++) {
+		const hand = sortedHandsByTypeStrength[i];
 		const count = handTypeMap.unsafeGet(hand.handType);
-		console.log("count of this type\n", hand.handType, "\n", count, "\n", hand);
-		totalHands += 1;
-		if (count === 1) {
-			hands[hand.id].rank = totalHands;
-		} else {
-			for (let i = 0; i < count; i++) {
-				// check char by char of each card of this type
-			}
+		if (count === 1 && hand.handType === "FiveOfAKind") {
+			hands[hand.id].rank = sortedHandsByTypeStrength.length;
+		} else if (
+			(count === 1 && hand.handType === "HighCard") ||
+			(count === 1 && hand.handType === "OnePair")
+		) {
+			hands[hand.id].rank = 1;
+		} else if (count > 1) {
+			const handsWithType = Object.values(hands).filter((h) => h.handType === hand.handType);
+			// skip ahead by however many cards we ranked here that all have the same type
+			i += handsWithType.length - 1;
 		}
 	}
 	console.log("==========================");
-	console.log("total hands", totalHands);
 
 	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-	console.log(hands);
+	// console.log(hands);
 
 	console.log("part1", null);
 })();
