@@ -441,6 +441,7 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 			});
 			console.log("\x1b[32m", "sorted hands by type strength", "\x1b[00m");
 			console.log(handsWithType);
+			// assign ranks to the sorted hands with the same type
 			// skip ahead by however many cards we ranked here that all have the same type
 			i += handsWithType.length - 1;
 		}
