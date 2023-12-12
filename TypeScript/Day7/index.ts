@@ -417,6 +417,30 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 			hands[hand.id].rank = 1;
 		} else if (count > 1) {
 			const handsWithType = Object.values(hands).filter((h) => h.handType === hand.handType);
+			// somehow figure out how each hand with the same type will rank against eachother
+			handsWithType.sort((aHand, bHand) => {
+				const aChars = aHand.id.split("") as Array<keyof FacetoStrengthRecord>;
+				const bChars = bHand.id.split("") as Array<keyof FacetoStrengthRecord>;
+				let result = 0;
+				outer: for (const a_char of aChars) {
+					inner: for (const b_char of bChars) {
+						// somehow this will put the highest ranking as earlier index in the array
+						if (FaceToStrength[a_char] < FaceToStrength[b_char]) {
+							result = 1;
+							break outer;
+						} else if (FaceToStrength[a_char] === FaceToStrength[b_char]) {
+							result = 0;
+							break inner;
+						} else {
+							result = -1;
+							break outer;
+						}
+					}
+				}
+				return result;
+			});
+			console.log("\x1b[32m", "sorted hands by type strength", "\x1b[00m");
+			console.log(handsWithType);
 			// skip ahead by however many cards we ranked here that all have the same type
 			i += handsWithType.length - 1;
 		}
