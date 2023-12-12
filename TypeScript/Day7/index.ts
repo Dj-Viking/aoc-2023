@@ -355,6 +355,7 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 
 (function main1() {
 	const hands: Record<string, Hand> = {};
+	let onlyHandOfItsOwnType = null as any as Hand;
 	const checkHandsAreUnique = {} as Record<string, number>;
 
 	for (const line of lines) {
@@ -391,13 +392,39 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 		}
 	}
 
-	// check ranks of hands
+	// sort hands by type lowest strength to highest strength
+	const sortedHandsByTypeStrength: Hand[] = Object.values(hands).sort((aHand, bHand) => {
+		if (HandTypeToStrength[aHand.handType] < HandTypeToStrength[bHand.handType]) {
+			return -1;
+		} else if (HandTypeToStrength[aHand.handType] === HandTypeToStrength[bHand.handType]) {
+			return 0;
+		} else {
+			return 1;
+		}
+	});
 
-	for (const [handtype, typecount] of handTypeMap) {
-		// console.log("handtype map key", handtype, "\ntypecount", typecount);
-		const handsWithHandType = Object.values(hands).filter((hand) => hand.handType === handtype);
-		// set the ranks somehow
+	console.log("==========================");
+	console.log("sorted by type strength");
+
+	let totalHands = 0;
+	while (sortedHandsByTypeStrength.length) {
+		const hand = sortedHandsByTypeStrength.shift()!;
+		const count = handTypeMap.unsafeGet(hand.handType);
+		console.log("count of this type\n", hand.handType, "\n", count, "\n", hand);
+		totalHands += 1;
+		if (count === 1) {
+			hands[hand.id].rank = totalHands;
+		} else {
+			for (let i = 0; i < count; i++) {
+				// check char by char of each card of this type
+			}
+		}
 	}
+	console.log("==========================");
+	console.log("total hands", totalHands);
+
+	console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+	console.log(hands);
 
 	console.log("part1", null);
 })();
