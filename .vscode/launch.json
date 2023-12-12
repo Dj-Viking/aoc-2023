@@ -6,7 +6,7 @@
     "configurations": [
         {
             "env": {
-                "INPUTFILE": "sample2"
+                "INPUTFILE": "threeofakind"
             },
             "type": "node",
             "request": "launch",
@@ -14,7 +14,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}\\TypeScript\\dist\\Day6\\index.js",
+            "program": "${workspaceFolder}\\TypeScript\\dist\\Day7\\index.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
             ]
