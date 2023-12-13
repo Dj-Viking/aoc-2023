@@ -2,15 +2,60 @@
     // Use IntelliSense to learn about possible attributes.
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
+    "version": "420.LMAO.GET.REKT",
     "configurations": [
+        {
+            "env": {
+                "INPUTFILE": "jokerthreeofakind"
+            },
+            "type": "node",
+            "request": "launch",
+            "name": "AOC with jokerthreeofakind",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\TypeScript\\dist\\Day7\\index.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "env": {
+                "INPUTFILE": "jokerfourofakind"
+            },
+            "type": "node",
+            "request": "launch",
+            "name": "AOC with jokerfourofakind",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\TypeScript\\dist\\Day7\\index.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
         {
             "env": {
                 "INPUTFILE": "input"
             },
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "AOC with input",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\TypeScript\\dist\\Day7\\index.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "env": {
+                "INPUTFILE": "sample"
+            },
+            "type": "node",
+            "request": "launch",
+            "name": "AOC with sample",
             "skipFiles": [
                 "<node_internals>/**"
             ],

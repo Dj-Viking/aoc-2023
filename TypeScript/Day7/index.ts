@@ -21,7 +21,23 @@ const FaceToStrength: FacetoStrengthRecord = {
 	Q: 10,
 	K: 11,
 	A: 12,
-};
+} as const;
+
+const FaceToStrength2: FacetoStrengthRecord = {
+	J: -1,
+	"2": 0,
+	"3": 1,
+	"4": 2,
+	"5": 3,
+	"6": 4,
+	"7": 5,
+	"8": 6,
+	"9": 7,
+	T: 8,
+	Q: 9,
+	K: 10,
+	A: 11,
+} as const;
 
 type HandType =
 	| "FiveOfAKind"
@@ -42,26 +58,119 @@ const HandTypeToStrength: HandTypeToStrengthRecord = {
 	FullHouse: 4,
 	FourOfAKind: 5,
 	FiveOfAKind: 6,
-};
+} as const;
+
+type Card = Partial<FacetoStrengthRecord>;
 
 class Hand {
-	public cards: Partial<FacetoStrengthRecord & { bid: number }>[] = [];
-	public handType: HandType = null as any;
+	public cards: Card[] = [];
+	public handType: HandType = null as any as HandType;
 	public rank = 0;
+	public masked = false;
+	public maskedType: HandType = null as any as HandType;
+	public mask = "";
 	public bid = 0;
 	public id = "";
+	public isPart2 = false;
 
-	public constructor(cards: string[], bid: number) {
+	public constructor(cards: string[], bid: number, part2?: boolean) {
+		this.isPart2 = part2 || false;
 		this.id = cards.join("");
 		this.bid = bid;
 		this.initHand(cards);
+		if (this.isPart2) {
+			this.handType = this.setHandType2();
+		} else {
+			this.setHandType();
+		}
+	}
+
+	// check what the hand was when it initially had some jokers and then
+	// see what the joker(s) should become to increase the hand's strength
+	// but the strength of the J is still lower than what it is masked as
+	// JKKK4 and QQQQ3 are both 4 of a kind but JKKK4 is lower strength because
+	// even though J masked as K - the fourofakind itself is lower strength than the QQQQ3
+	//
+	// after all that - mark the card as masked
+	public setHandType2(): HandType {
+		const map = this.getFaceMap(this.getFaces());
+		const keys = Object.keys(map);
+		const keysLength = keys.length;
+		const counts = Object.values(map);
+		const jockersCount = !this.isPart2 ? 0 : map["J"] ?? 0;
+
+		function assertJocker(counts: number[]) {
+			if (jockersCount && !counts.includes(jockersCount)) {
+				throw `Unhandled jocker, ${JSON.stringify(map, null, 2)}`;
+			}
+		}
+
+		if (keysLength === 1) {
+			assertJocker([5]);
+			return "FiveOfAKind";
+		}
+
+		if (keysLength === 2) {
+			assertJocker([1, 2, 3, 4]);
+			if (jockersCount) {
+				return "FiveOfAKind";
+			}
+			if (counts.includes(4)) {
+				return "FourOfAKind";
+			}
+			return "FullHouse";
+		}
+
+		if (counts.includes(3)) {
+			assertJocker([1, 3]);
+			if (jockersCount) {
+				return "FourOfAKind";
+			}
+			return "ThreeOfAKind";
+		}
+
+		if (counts.includes(2)) {
+			assertJocker([1, 2]);
+
+			const numOfPairs = counts.reduce(
+				(numOfPairs, count) => (count === 2 ? numOfPairs + 1 : numOfPairs),
+				0
+			);
+
+			if (numOfPairs > 1) {
+				if (jockersCount === 1) {
+					return "FullHouse";
+				}
+				if (jockersCount === 2) {
+					return "FourOfAKind";
+				}
+				return "TwoPair";
+			}
+			if (jockersCount) {
+				return "ThreeOfAKind";
+			}
+			return "OnePair";
+		}
+
+		if (jockersCount) {
+			assertJocker([1]);
+			return "OnePair";
+		}
+
+		return "HighCard";
 	}
 
 	private initHand(cards: string[]) {
 		for (const card of cards) {
-			this.cards.push({
-				[card]: FaceToStrength[card as keyof FacetoStrengthRecord],
-			});
+			if (this.isPart2) {
+				this.cards.push({
+					[card]: FaceToStrength2[card as keyof FacetoStrengthRecord],
+				});
+			} else {
+				this.cards.push({
+					[card]: FaceToStrength[card as keyof FacetoStrengthRecord],
+				});
+			}
 		}
 	}
 
@@ -83,14 +192,24 @@ class Hand {
 		}
 	}
 
-	private getFaces(): string[] {
-		const faces: string[] = [];
+	public getFaces(): CardName[] {
+		const faces: CardName[] = [];
 
 		for (const card of this.cards) {
 			faces.push(Object.keys(card)[0]);
 		}
 
 		return faces;
+	}
+
+	private getFaceMap(faces: CardName[]): Record<keyof Card, number> {
+		const faceMap = {} as Record<keyof Card, number>;
+
+		for (const face of faces) {
+			!faceMap[face] ? (faceMap[face] = 1) : (faceMap[face] += 1);
+		}
+
+		return faceMap;
 	}
 
 	/**
@@ -101,14 +220,10 @@ class Hand {
 	 * "KKKKK"
 	 */
 	public isFiveOfAKind(): boolean {
-		const faces: string[] = this.getFaces();
+		const faces: CardName[] = this.getFaces();
 		// console.log("five of a kind faces", faces);
 
-		const faceMap = {} as Record<string, number>;
-
-		for (const face of faces) {
-			!faceMap[face] ? (faceMap[face] = 1) : (faceMap[face] += 1);
-		}
+		const faceMap = this.getFaceMap(faces);
 
 		let fives = 0;
 		for (const value of Object.values(faceMap)) {
@@ -165,18 +280,7 @@ class Hand {
 	 * "TTKKK"
 	 */
 	public isFullHouse(): boolean {
-		const faces: string[] = this.getFaces();
-		// console.log("full house faces", faces);
-
-		const faceMap = {} as Record<string, number>;
-
-		for (const face of faces) {
-			if (!faceMap[face]) {
-				faceMap[face] = 1;
-			} else {
-				faceMap[face] += 1;
-			}
-		}
+		const faceMap = this.getFaceMap(this.getFaces());
 
 		let pairs = 0;
 		let threes = 0;
@@ -203,13 +307,7 @@ class Hand {
 	 * "333KQ"
 	 */
 	public isThreeOfAKind(): boolean {
-		const faces: string[] = this.getFaces();
-		// console.log("three of a kind faces", faces);
-		const faceMap = {} as Record<string, number>;
-
-		for (const face of faces) {
-			!faceMap[face] ? (faceMap[face] = 1) : (faceMap[face] += 1);
-		}
+		const faceMap = this.getFaceMap(this.getFaces());
 		// console.log("face map", faceMap);
 
 		let threes = 0;
@@ -237,18 +335,7 @@ class Hand {
 	 * "33QQK"
 	 */
 	public isTwoPair(): boolean {
-		const faces: string[] = this.getFaces();
-		// console.log("two pair faces", faces);
-
-		const faceMap = {} as Record<string, number>;
-
-		for (const face of faces) {
-			if (!faceMap[face]) {
-				faceMap[face] = 1;
-			} else {
-				faceMap[face] += 1;
-			}
-		}
+		const faceMap = this.getFaceMap(this.getFaces());
 
 		// console.log("facemap", faceMap);
 
@@ -277,18 +364,7 @@ class Hand {
 	 * "22345"
 	 */
 	public isOnePair(): boolean {
-		const faces: string[] = this.getFaces();
-		// console.log("one pair faces", faces);
-
-		const faceMap = {} as Record<string, number>;
-
-		for (const face of faces) {
-			if (!faceMap[face]) {
-				faceMap[face] = 1;
-			} else {
-				faceMap[face] += 1;
-			}
-		}
+		const faceMap = this.getFaceMap(this.getFaces());
 
 		let pairs = 0;
 		let unique = 0;
@@ -366,7 +442,6 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 			: (checkHandsAreUnique[cards] += 1);
 
 		const hand = new Hand(cards.split(""), Number(bid));
-		hand.setHandType();
 		hands[hand.id] = hand;
 		// console.log(cards.split(""), "\n", hand);
 		// testHand(hand, bid);
@@ -458,6 +533,173 @@ class HandTypeMap<K extends HandType = HandType, V extends number = number> exte
 	// 250951660 ?? YES1!!!!!!!
 	console.log("part1", sum);
 })();
-(function main2() {
-	// console.log("part2", null);
-})();
+
+const CARDS = {
+	A: 14,
+	K: 13,
+	Q: 12,
+	J: 11,
+	T: 10,
+	"9": 9,
+	"8": 8,
+	"7": 7,
+	"6": 6,
+	"5": 5,
+	"4": 4,
+	"3": 3,
+	"2": 2,
+} as const;
+
+const JOCKER_CARDS = { ...CARDS, J: 1 } as const;
+
+type Card2 = keyof typeof CARDS;
+
+const HAND_TYPES = {
+	"Five of a kind": 7,
+	"Four of a kind": 6,
+	"Full house": 5,
+	"Three of a kind": 4,
+	"Two pair": 3,
+	"One pair": 2,
+	"High card": 1,
+};
+
+type HandType2 = keyof typeof HAND_TYPES;
+
+type CardsCountMap = { [card in string]: number };
+
+type Hand2 = {
+	bid: number;
+	cards: string;
+	cardsCountMap: CardsCountMap;
+	type: HandType2;
+};
+
+const solution = solve(readLines());
+console.log(solution);
+
+function readLines() {
+	return lines;
+}
+
+function solve(inputLines: string[]) {
+	return {
+		// part1: getTotalWinnings(inputLines),
+		part2: getTotalWinnings(inputLines, true),
+	};
+}
+
+function getTotalWinnings(inputLines: string[], part2: boolean = false) {
+	const hands = inputLines.map((line) => createHand(line, part2));
+	const sortedHands = hands.sort((a, b) => compareHands(a, b, part2));
+	return sortedHands.map((hand, i) => hand.bid * (i + 1)).reduce((sum, x) => sum + x, 0);
+}
+
+function createHand(inputLine: string, withJoker: boolean): Hand2 {
+	const [cards, bidStr] = inputLine.split(" ");
+
+	const bid = parseInt(bidStr, 10);
+	const cardsCountMap = countHand(cards);
+	const type = getHandType(cardsCountMap, withJoker);
+
+	return {
+		bid,
+		cards,
+		cardsCountMap,
+		type,
+	};
+}
+
+function countHand(cards: string): CardsCountMap {
+	return cards.split("").reduce<CardsCountMap>((map, card) => {
+		map[card] = (map[card] ?? 0) + 1;
+		return map;
+	}, {});
+}
+
+function getHandType(map: CardsCountMap, withJoker: boolean): HandType2 {
+	const keys = Object.keys(map);
+	const keysLength = keys.length;
+	const counts = Object.values(map);
+	const jockersCount = !withJoker ? 0 : map["J"] ?? 0;
+
+	function assertJocker(counts: number[]) {
+		if (jockersCount && !counts.includes(jockersCount)) {
+			throw `Unhandled jocker, ${JSON.stringify(map, null, 2)}`;
+		}
+	}
+
+	if (keysLength === 1) {
+		assertJocker([5]);
+		return "Five of a kind";
+	}
+
+	if (keysLength === 2) {
+		assertJocker([1, 2, 3, 4]);
+		if (jockersCount) {
+			return "Five of a kind";
+		}
+		if (counts.includes(4)) {
+			return "Four of a kind";
+		}
+		return "Full house";
+	}
+
+	if (counts.includes(3)) {
+		assertJocker([1, 3]);
+		if (jockersCount) {
+			return "Four of a kind";
+		}
+		return "Three of a kind";
+	}
+
+	if (counts.includes(2)) {
+		assertJocker([1, 2]);
+
+		const numOfPairs = counts.reduce(
+			(numOfPairs, count) => (count === 2 ? numOfPairs + 1 : numOfPairs),
+			0
+		);
+
+		if (numOfPairs > 1) {
+			if (jockersCount === 1) {
+				return "Full house";
+			}
+			if (jockersCount === 2) {
+				return "Four of a kind";
+			}
+			return "Two pair";
+		}
+		if (jockersCount) {
+			return "Three of a kind";
+		}
+		return "One pair";
+	}
+
+	if (jockersCount) {
+		assertJocker([1]);
+		return "One pair";
+	}
+
+	return "High card";
+}
+
+function compareHands(handA: Hand2, handB: Hand2, part2: boolean) {
+	if (handA.type === handB.type) {
+		return compareUsingSecondOrderingRule(handA.cards, handB.cards, part2);
+	}
+	return HAND_TYPES[handA.type] - HAND_TYPES[handB.type];
+}
+
+function compareUsingSecondOrderingRule(cardsA: string, cardsB: string, part2: boolean = false) {
+	const values = part2 ? JOCKER_CARDS : CARDS;
+	for (let i = 0; i < cardsA.length; i++) {
+		const a = cardsA[i] as Card2;
+		const b = cardsB[i] as Card2;
+		if (values[a] === values[b]) {
+			continue;
+		}
+		return values[a] - values[b];
+	}
+	return 0;
+}
