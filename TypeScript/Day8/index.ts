@@ -88,13 +88,8 @@ function main1() {
 
 	console.log("part1", steps);
 }
-// main1();
-class Node2 {
-	public name: string = "";
-	public instructions: Instruction[] = [];
-	public routes: [string, string] = [] as any as [string, string];
-}
-(function main2() {
+main1();
+function main2() {
 	let startingInstructions: Instruction[] = [];
 	let steps = 0;
 	let nodeMap = {} as Record<string, Node>;
@@ -127,49 +122,51 @@ class Node2 {
 		startingInstructions.length
 	);
 
-	// walk the map with given instructions
-	let instrQueue = [...startingInstructions];
-
 	let reachedDest = false;
 
 	// start at every node that ends with A
 	let startingNodes = Object.values(nodeMap).filter((node) => node.name.endsWith("A"));
-	let currentNodes: Node[] = startingNodes;
+	let currentNodes: Node[] = [...startingNodes];
 	console.log("starting nodes", startingNodes);
 
 	// return;
 
 	while (!reachedDest) {
 		desert2: for (let j = 0; j < startingInstructions.length; j++) {
+			// if after each step of all nodes at once
+			// check if they are all at a node ending with Z
+			if (currentNodes.every((node) => node.end)) {
+				reachedDest = true;
+				break desert2;
+			}
+			steps++;
+			// if (steps % 1000000 === 0 && currentNodes.some((node) => node.end)) {
+			// 	// console.log("steps", steps, "\ncurrent nodes", currentNodes);
+			// }
 			for (let i = 0; i < currentNodes.length; i++) {
-				if (currentNodes.every((node) => node.end)) {
-					reachedDest = true;
-					break desert2;
-				}
-				steps++;
-
-				if (currentNodes[i].end) {
-					continue;
-				}
 				const instr = startingInstructions[j];
 				const currentNode = currentNodes[i];
 				const left = currentNode.routes[0];
 				const right = currentNode.routes[1];
-				if (instr === Instruction.left && !left.includes("XXX")) {
+				if (instr === Instruction.left) {
 					if (left.endsWith("Z")) {
+						console.log(steps, "LEFT ENDED WITH Z", left, currentNodes);
+						currentNodes[i] = nodeMap[left];
 						currentNodes[i].end = true;
-						// reachedDest = true;
-						// break desert2;
 					} else {
 						currentNodes[i] = nodeMap[left];
+						currentNodes[i].end = false;
 					}
-				} else if (instr === Instruction.right && !right.includes("XXX")) {
+				} else if (instr === Instruction.right) {
 					if (right.endsWith("Z")) {
+						if (steps % 5 === 0) {
+							console.log(steps, "RIGHT ENDED WITH Z", right, currentNodes);
+						}
+						currentNodes[i] = nodeMap[right];
 						currentNodes[i].end = true;
-						// reachedDest = true;
-						// break desert2;
 					} else {
 						currentNodes[i] = nodeMap[right];
+						currentNodes[i].end = false;
 					}
 				}
 			}
@@ -177,5 +174,48 @@ class Node2 {
 	}
 	// 223848 TOO LOW
 	// 138879 TOO LOW
+	// 138882 TOO LOW
+	// i think my solution was right but this is going to take too long
 	console.log("part2", steps);
+}
+
+// im too much of a noob to know what LCM means or why it pertains to this problem :(
+(function main2() {
+	const nodes: Record<string, { L: string; R: string }> = {};
+
+	for (let i = 1; i < lines.length; i++) {
+		const line = lines[i];
+		nodes[line.substring(0, 3)] = {
+			L: line.substring(7, 10),
+			R: line.substring(12, 15),
+		};
+	}
+
+	const instructions = lines[0].split("") as Array<"R" | "L">;
+	const starts = [];
+	for (const key in nodes) {
+		if (Object.prototype.hasOwnProperty.call(nodes, key) && key[2] === "A") {
+			starts.push(key);
+		}
+	}
+
+	const lengths = starts.map((start) => {
+		let steps = 0;
+		let curr = start;
+		for (let i = 0; curr[2] !== "Z"; i = (i + 1) % instructions.length) {
+			steps++;
+			curr = nodes[curr][instructions[i]];
+		}
+		return steps;
+	});
+
+	const gcd = (a: number, b: number) => {
+		while (b > 0) [a, b] = [b, a % b];
+		return a;
+	};
+	const lcm = (a: number, b: number) => (a * b) / gcd(a, b);
+	console.log(
+		"part2",
+		lengths.reduce((n, x) => lcm(x, n), 1)
+	);
 })();

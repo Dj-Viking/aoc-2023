@@ -6,6 +6,21 @@
     "configurations": [
         {
             "env": {
+                "INPUTFILE": "input"
+            },
+            "type": "node",
+            "request": "launch",
+            "name": "AOC 8 with input",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}\\TypeScript\\dist\\Day8\\index.js",
+            "outFiles": [
+                "${workspaceFolder}/**/*.js"
+            ]
+        },
+        {
+            "env": {
                 "INPUTFILE": "sample3"
             },
             "type": "node",
