@@ -127,22 +127,8 @@ function walkGrid(grid: string[][], startCoords: [number, number]) {
 		if (!currentOptions.hasOptions) {
 			walking = false;
 		}
-		// console.log(
-		// 	"current tile",
-		// 	currentTile,
-		// 	"\ncurrentoptions",
-		// 	currentOptions,
-		// 	"\nvisted",
-		// 	visited
-		// );
-		moveNext: for (const [direction, nextTilePointRecord] of Object.entries(
-			currentOptions.neighbors
-		)) {
+		for (const [direction, nextTilePointRecord] of Object.entries(currentOptions.neighbors)) {
 			if (TileToAllowedDirections[currentTile][direction]) {
-				if (nextTilePointRecord.point.toString() === startPoint.toString()) {
-					walking = false;
-					break moveNext;
-				}
 				if (!visited.has(nextTilePointRecord.point.toString())) {
 					// set current point here....
 					currentPoint = new Point(
@@ -172,12 +158,7 @@ function walkGrid(grid: string[][], startCoords: [number, number]) {
 		}
 	}
 
-	// infer what the S tile should be based on it's neighbors
-	// inferStartTile(grid);
-
 	walkGrid(grid, startCoords);
-
-	// console.log("grid", grid);
 
 	console.log("part1", visited.size / 2);
 })();
